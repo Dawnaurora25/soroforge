@@ -866,6 +866,7 @@ than IDs or raw paths.
 | `POST` | `/v1/deploy` | write | `{"alias","network","notes","dry_run","git_commit","require_spec"}` → `201` (`200` for a dry run). Add `?async=true` for a job. |
 | `POST` | `/v1/upgrade` | write | Same body → `200`. Add `?async=true` for a job. |
 | `GET` | `/v1/jobs/{id}` | read | Async job state and, when finished, its result. |
+| `GET` | `/v1/networks` | read | RPC health for every configured network: reachability, latency, latest ledger, and passphrase verdict. URLs are credential-redacted and results are cached briefly. |
 | `GET` | `/v1/contracts?network=&limit=&offset=` | read | Tracked contracts, paginated (default limit 100, maximum 500). |
 | `GET` | `/v1/contracts/{network}/{alias}/history?limit=&offset=` | read | Deployment history, paginated (default limit 100, maximum 500). |
 | `GET` | `/v1/contracts/{network}/{alias}/status` | read | Drift check. |
