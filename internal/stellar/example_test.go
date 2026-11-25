@@ -44,3 +44,74 @@ func ExampleContractIDFromSimulation() {
 	// Output:
 	// CAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQTCQKRMFYYDENBWHA5DYPSBFLM
 }
+
+// ExampleCodeLedgerKey builds the ledger key used to look up uploaded WASM
+// bytecode by its content hash.
+func ExampleCodeLedgerKey() {
+	key := stellar.CodeLedgerKey(stellar.WasmHash([]byte("soroforge")))
+
+	fmt.Println(key.Type == xdr.LedgerEntryTypeContractCode)
+	fmt.Println(stellar.HashHex(key.ContractCode.Hash))
+
+	// Output:
+	// true
+	// dd2d49def30aef488ba257a346cec2b4b1f4d07a7bca033d4ae7dd716a8ff3e7
+}
+
+// ExampleInstanceLedgerKey builds the persistent ledger key for a deployed
+// contract instance.
+func ExampleInstanceLedgerKey() {
+	key, err := stellar.InstanceLedgerKey("CAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQTCQKRMFYYDENBWHA5DYPSBFLM")
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	fmt.Println(key.Type == xdr.LedgerEntryTypeContractData)
+	fmt.Println(key.ContractData.Durability == xdr.ContractDataDurabilityPersistent)
+
+	// Output:
+	// true
+	// true
+}
+
+// ExampleContractIDFromAsset derives the deterministic Stellar Asset Contract
+// address for an asset on a specific network.
+func ExampleContractIDFromAsset() {
+	asset, err := stellar.ParseAsset("native")
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+
+	contractID, err := stellar.ContractIDFromAsset(asset, "Test SDF Network ; September 2015")
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	fmt.Println(len(contractID), contractID[0] == 'C')
+
+	// Output:
+	// 56 true
+}
+
+// ExampleContractIDFromDeployer derives the deterministic address a contract
+// deployment will receive before any transaction is submitted.
+func ExampleContractIDFromDeployer() {
+	const deployer = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
+	var salt [32]byte
+
+	contractID, err := stellar.ContractIDFromDeployer(
+		"Test SDF Network ; September 2015",
+		deployer,
+		salt,
+	)
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	fmt.Println(len(contractID), contractID[0] == 'C')
+
+	// Output:
+	// 56 true
+}
