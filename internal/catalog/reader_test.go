@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -81,4 +82,97 @@ func TestSoroVaultReaderErrors(t *testing.T) {
 
 	_, err = sv.Versions(context.Background(), "http://127.0.0.1:1", readerContractID)
 	assert.ErrorContains(t, err, "sorovault:")
+}
+
+// TestStructJSONRoundTrip verifies that Struct marshals to JSON and back
+// without loss (#377).
+func TestStructJSONRoundTrip(t *testing.T) {
+	t.Parallel()
+	original := Struct{
+		Name: "Config",
+		Fields: []Param{
+			{Name: "admin", Type: Type{Display: "Address"}},
+			{Name: "fee", Type: Type{Display: "u32"}},
+		},
+	}
+	data, err := json.Marshal(original)
+	require.NoError(t, err)
+
+	var got Struct
+	require.NoError(t, json.Unmarshal(data, &got))
+	assert.Equal(t, original, got)
+}
+
+// TestTypeJSONRoundTrip verifies that Type marshals to JSON and back
+// without loss (#378).
+func TestTypeJSONRoundTrip(t *testing.T) {
+	t.Parallel()
+	original := Type{Display: "Map<Symbol, i128>"}
+	data, err := json.Marshal(original)
+	require.NoError(t, err)
+
+	var got Type
+	require.NoError(t, json.Unmarshal(data, &got))
+	assert.Equal(t, original, got)
+}
+
+// TestTypesJSONRoundTrip verifies that Types marshals to JSON and back
+// without loss (#379).
+func TestTypesJSONRoundTrip(t *testing.T) {
+	t.Parallel()
+	original := Types{
+		Structs: []Struct{
+			{
+				Name:   "Config",
+				Fields: []Param{{Name: "admin", Type: Type{Display: "Address"}}},
+			},
+		},
+		Unions: []Union{
+			{
+				Name: "DataKey",
+				Cases: []UnionCase{
+					{Name: "Balance", Values: []Type{{Display: "Address"}}},
+					{Name: "Nonce", Values: []Type{}},
+				},
+			},
+		},
+		Enums: []Enum{
+			{
+				Name:  "Status",
+				Cases: []EnumCase{{Name: "Active", Value: 0}, {Name: "Closed", Value: 1}},
+			},
+		},
+		ErrorEnums: []Enum{
+			{
+				Name:  "Error",
+				Cases: []EnumCase{{Name: "NotFound", Value: 1}, {Name: "Unauthorized", Value: 2}},
+			},
+		},
+	}
+	data, err := json.Marshal(original)
+	require.NoError(t, err)
+
+	var got Types
+	require.NoError(t, json.Unmarshal(data, &got))
+	assert.Equal(t, original, got)
+}
+
+// TestUnionJSONRoundTrip verifies that Union marshals to JSON and back
+// without loss (#380).
+func TestUnionJSONRoundTrip(t *testing.T) {
+	t.Parallel()
+	original := Union{
+		Name: "DataKey",
+		Cases: []UnionCase{
+			{Name: "Balance", Values: []Type{{Display: "Address"}, {Display: "u32"}}},
+			{Name: "Allowance", Values: []Type{{Display: "AllowanceDataKey"}}},
+			{Name: "Nonce", Values: []Type{}},
+		},
+	}
+	data, err := json.Marshal(original)
+	require.NoError(t, err)
+
+	var got Union
+	require.NoError(t, json.Unmarshal(data, &got))
+	assert.Equal(t, original, got)
 }
