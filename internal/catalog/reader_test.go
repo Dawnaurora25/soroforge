@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,6 +54,46 @@ func TestSoroVaultInterface(t *testing.T) {
 	assert.Equal(t, "Address", in.Types.Structs[0].Fields[0].Type.Display)
 	require.Len(t, in.Types.ErrorEnums, 1)
 	require.Len(t, in.Events, 1)
+}
+
+func TestParamJSONRoundTrip(t *testing.T) {
+	orig := Param{Name: "amount", Type: Type{Display: "u128"}}
+	b, err := json.Marshal(orig)
+	require.NoError(t, err)
+	var got Param
+	require.NoError(t, json.Unmarshal(b, &got))
+	assert.Equal(t, orig, got)
+}
+
+func TestFunctionJSONRoundTrip(t *testing.T) {
+	orig := Function{
+		Name:    "transfer",
+		Inputs:  []Param{{Name: "from", Type: Type{Display: "Address"}}, {Name: "amount", Type: Type{Display: "u128"}}},
+		Outputs: []Type{{Display: "bool"}},
+	}
+	b, err := json.Marshal(orig)
+	require.NoError(t, err)
+	var got Function
+	require.NoError(t, json.Unmarshal(b, &got))
+	assert.Equal(t, orig, got)
+}
+
+func TestInterfaceJSONRoundTrip(t *testing.T) {
+	orig := Interface{
+		Functions: []Function{{Name: "increment", Inputs: []Param{{Name: "by", Type: Type{Display: "u32"}}}, Outputs: []Type{{Display: "u32"}}}},
+		Types: Types{
+			Structs:    []Struct{{Name: "Config", Fields: []Param{{Name: "admin", Type: Type{Display: "Address"}}}}},
+			Unions:     []Union{{Name: "Op", Cases: []UnionCase{{Name: "Add", Values: []Type{{Display: "u32"}}}}}},
+			Enums:      []Enum{{Name: "Status", Cases: []EnumCase{{Name: "Active", Value: 1}}}},
+			ErrorEnums: []Enum{{Name: "Error", Cases: []EnumCase{{Name: "Nope", Value: 1}}}},
+		},
+		Events: []Event{{Name: "bumped", Params: []Param{{Name: "by", Type: Type{Display: "u32"}}}}},
+	}
+	b, err := json.Marshal(orig)
+	require.NoError(t, err)
+	var got Interface
+	require.NoError(t, json.Unmarshal(b, &got))
+	assert.Equal(t, orig, got)
 }
 
 func TestSoroVaultReaderErrors(t *testing.T) {
