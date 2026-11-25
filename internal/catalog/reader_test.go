@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,6 +12,48 @@ import (
 )
 
 const readerContractID = "CA3D5KRYM6CB7OWQ6TWYRR3Z4T7GNZLKERYNZGGA5SOAOPIFY6YQGAXE"
+
+// TestEnumJSONRoundTrip verifies that Enum marshals and unmarshals without data
+// loss, including a non-empty Cases slice (#370).
+func TestEnumJSONRoundTrip(t *testing.T) {
+	orig := Enum{
+		Name:  "Status",
+		Cases: []EnumCase{{Name: "Active", Value: 1}, {Name: "Inactive", Value: 2}},
+	}
+	data, err := json.Marshal(orig)
+	require.NoError(t, err)
+	var got Enum
+	require.NoError(t, json.Unmarshal(data, &got))
+	assert.Equal(t, orig, got)
+}
+
+// TestEnumCaseJSONRoundTrip verifies that EnumCase marshals and unmarshals
+// without data loss (#371).
+func TestEnumCaseJSONRoundTrip(t *testing.T) {
+	orig := EnumCase{Name: "NotFound", Value: 404}
+	data, err := json.Marshal(orig)
+	require.NoError(t, err)
+	var got EnumCase
+	require.NoError(t, json.Unmarshal(data, &got))
+	assert.Equal(t, orig, got)
+}
+
+// TestEventJSONRoundTrip verifies that Event marshals and unmarshals without
+// data loss, including a non-empty Params slice (#372).
+func TestEventJSONRoundTrip(t *testing.T) {
+	orig := Event{
+		Name: "transferred",
+		Params: []Param{
+			{Name: "from", Type: Type{Display: "Address"}},
+			{Name: "amount", Type: Type{Display: "i128"}},
+		},
+	}
+	data, err := json.Marshal(orig)
+	require.NoError(t, err)
+	var got Event
+	require.NoError(t, json.Unmarshal(data, &got))
+	assert.Equal(t, orig, got)
+}
 
 func TestSoroVaultVersions(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
